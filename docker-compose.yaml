@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:8
+    container_name: db
+    restart: always
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD="yes"
+      - MYSQL_DATABASE=nodedb
+    networks:
+      - node-network
+    tty: true
+
+  app:
+    build: ./node
+    container_name: app
+    command: ["/usr/src/app/wait-for-it.sh", "db:3306", "-t", "30", "--", "npm", "start"]
+    networks:
+      - node-network
+    volumes:
+      - ./node:/usr/src/app
+    tty: true
+    depends_on:
+      - db
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    tty: true
+    networks:
+      - node-network
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+
+networks:
+  node-network:
+    driver: bridge
